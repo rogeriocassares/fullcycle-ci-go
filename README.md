@@ -405,12 +405,12 @@ on:
   pull_request:
     branches:
       - develop
-strategy:
-  matrix:
-    go: ['1.14','1.15']
 jobs: 
   check-application:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: ['1.14','1.15']
     steps:
       - uses: actions/checkout@v2 
       - uses: actions/setup-go@v2
@@ -424,9 +424,17 @@ jobs:
 
 
 
-E entao vamos criar uma
+E entao vamos criar uma nova branch, 
 
+```bash
+rogerio in 3.CI on  develop [!] 
+❯ git checkout -b feature/github-matrix
+Switched to a new branch 'feature/github-matrix'
+rogerio in 3.CI on  feature/github-matrix [!] 
+❯ git add .
+```
 
+E agora, vamos dar uma PR e ir para as asctions.
 
 
 
