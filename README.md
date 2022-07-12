@@ -148,7 +148,7 @@ func TestSoma(t *testing.T) {
 
 
 
-#### Criando um primeiro Workflow
+#### Criando primeiro Workflow
 
 Criar um repositorio no Guthub fullcycle-ci-go e inici a um repositorio git
 
@@ -156,5 +156,217 @@ Criar um repositorio no Guthub fullcycle-ci-go e inici a um repositorio git
 git init
 ```
 
-Vamos adionar utilizando o conventional commits plugin do vscode.
+Vamos adionar ao stage utilizando o conventional commits plugin do vscode.
+
+As vezes quando estamos trabalhando com mommits assinados pode demorar um pouquinho. 
+
+Podemos resolver com o gpg-agent
+
+```bash
+gpgconf --launc gpg-agent
+```
+
+
+
+Agora vamos dar um push e configurar pela primeira vez:
+
+```bash
+rogerio in 3.CI on  master [!] 
+❯ git branch -M main
+git remote add origin https://github.com/rogeriocassares/fullcycle-ci-go.git
+rogerio in 3.CI on  main [!] 
+❯ git push -u origin main
+Enumerating objects: 6, done.
+Counting objects: 100% (6/6), done.
+Delta compression using up to 4 threads
+Compressing objects: 100% (5/5), done.
+Writing objects: 100% (6/6), 4.18 KiB | 2.09 MiB/s, done.
+Total 6 (delta 0), reused 0 (delta 0), pack-reused 0
+To https://github.com/rogeriocassares/fullcycle-ci-go.git
+ * [new branch]      main -> main
+Branch 'main' set up to track remote branch 'main' from 'origin'.
+
+```
+
+
+
+Agora vamos criar o 1o workflow utilizando o GHA!
+
+
+
+Criar arquivo .github/workflows/ci.yaml
+
+```ỳaml
+name: ci-golang-workflow
+on: [push]
+jobs: 
+  check-application:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2 
+      # Pega os dados que acabamos de subir e vai fazer download na maquina ubuntu.
+      - uses: actions/setup-go@v2
+      # Faz o setup do go
+      # actions/setup é um repositório do github!
+        with: 
+          go-version: 1.15
+      - run: go test
+      - run: go run math.go
+```
+
+
+
+Agora vamos no controle de versao do github, adiconar o ci.yaml , conventional commits plugin ... etc. No proprio source control, podemos dar um push.
+
+Se formos no github -> Action e podemos ver o que ele executou, rodou os testes o programa e depois completou o job!
+
+Nesse ponto, as nossas actions funcionaram e está tudo ok!
+
+
+
+#### Fazendo Github actions nao passar
+
+Imaginemos u edesejamos fazer modificação na aplicação. Mudar de Soma para soma e fazer com que o teste nao passe pq o test está utilizando Soma.
+
+Entao vamos dar um commit nesse arquivo.
+
+Source Control - CObventional COmmit nova feature ... 
+
+
+
+Vamos em Actions para verificar e olha só. Run go test nao passou!
+
+O PROCESSO DE CI nao passsou pq nao achou a função soma!
+
+Inclusive quando vamos ao codebase, vemos que o último commit nao passou!
+
+Agora vamos fazer este teste passar atribuindo soma minuscula ao nome da função.
+
+Source control - convential commit - push
+
+Agora vimos que passou o go test e conseguiu rodar a nossa função!
+
+SE O CODEIGO NAO PASSAR NO TESTES O GITHUB ACTION NAO PERMITE QUE SEJA DADO O PR PARA O REPOITORIO
+
+
+
+#### Ativando status check
+
+Vamos voltar nos padroes de criar um branch develop e PRs
+
+No terminal:
+
+```bash
+rogerio in 3.CI on  main [!] 
+❯ git checkout -b develop
+Switched to a new branch 'develop'
+
+```
+
+
+
+E vamos subir um branch igualzinho ao main no github
+
+```bash
+
+rogerio in 3.CI on  develop [!] 
+❯ git push origin develop
+Total 0 (delta 0), reused 0 (delta 0), pack-reused 0
+remote: 
+remote: Create a pull request for 'develop' on GitHub by visiting:
+remote:      https://github.com/rogeriocassares/fullcycle-ci-go/pull/new/develop
+remote: 
+To https://github.com/rogeriocassares/fullcycle-ci-go.git
+ * [new branch]      develop -> develop
+ 
+```
+
+
+
+No github:
+
+Settings, branches
+
+Branch princiap para o develop
+
+E entao vamos criar uma proteção para o branch develop
+
+Add rules e exigir que tenhamos um require status check antes de dar um merge.
+
+Vamos escolher o Job chamado check-application, que foi o nome do Job que criamos no arquivo yaml. Esse teste entao tem que paassar para pdermos dar um merge no nosso github!
+
+E vamios obrigar que os branches estejam na ultima versao para que façam o status check. 
+
+NInguem tb poode commitar diretamente, incluindo administradores ... 
+
+Fazer essa mesma rule para o main
+
+Agora, a regra é que tudo o que estiver em produção é o que etsá no branch main, nesse processo, só vai ser mergeado no develop. O develop é quem faz o merge para o main.
+
+O processo de CI do develo e do main sao diferentes.
+
+No develop, o CI vai apenas verificar se está tudo passando. 
+
+No main, além de passar, ele vai fazer o deploy. E ninsso vai entrar o CD - COntinuos Deployment/Delivery.
+
+Nesse caso, queremos que aconteça somente no branch develop pq as regras do branc em produção sao diferentes,
+
+
+
+Entao vamos alterar lgumas coisas no ci.yaml. AO invés on push, on pull-request.
+
+Outra parte para entender, é qual branch queremos filtrar.
+
+Github docs tem diversos templates para os jobs
+
+```yaml
+name: ci-golang-workflow
+on: 
+  pull_request:
+    branches:
+      - develop
+      # Todas as vezes que subirmos para o branch develop, queremos que algo aconteça
+jobs: 
+  check-application:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2 
+      - uses: actions/setup-go@v2
+        with: 
+          go-version: 1.15
+      - run: go test
+      - run: go run math.go
+```
+
+
+
+Adicionar , comnvential commits ... push
+
+Entao, todas as v ezes que colocarmos no nosso repositorio e dermos um PR, o status check vai acontecer! E ai vai opassar e podermos dar o merge.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

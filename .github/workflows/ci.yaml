@@ -1,5 +1,9 @@
 name: ci-golang-workflow
-on: [push]
+on: 
+  pull_request:
+    branches:
+      - develop
+      # Todas as vezes que subirmos para o branch develop, queremos que algo aconteça
 jobs: 
   check-application:
     runs-on: ubuntu-latest
