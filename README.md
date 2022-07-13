@@ -435,6 +435,7 @@ rogerio in 3.CI on  feature/github-matrix [!]
 ```
 
 E agora, vamos dar uma PR e ir para as asctions.
+<<<<<<< HEAD
 
 Entao os checks estao acontecendo em 2 jobs! Um na versao 1.14 e outro na 1.15
 
@@ -645,6 +646,8 @@ Vamos desablitar os checks com diversas opçoes para poder rodaro status check!
 
 
 
+=======
+>>>>>>> eb8e8112fe2e4755240a86c0a5993cdcfe7d6626
 
 
 
