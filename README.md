@@ -346,6 +346,290 @@ Entao, todas as v ezes que colocarmos no nosso repositorio e dermos um PR, o sta
 
 
 
+Deu erro ao fazer o push diretamente para a branch develop pq devemos fazer uma PR!!!
+
+Vamos fazer um PR criando uma nova branch!
+
+```bash
+rogerio in 3.CI on  develop [!] 
+❯ git checkout -b feature/ci
+Switched to a new branch 'feature/ci'
+rogerio in 3.CI on  feature/ci [!] 
+❯ git push origin feature/ci
+Enumerating objects: 13, done.
+Counting objects: 100% (13/13), done.
+Delta compression using up to 4 threads
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (8/8), 4.38 KiB | 4.38 MiB/s, done.
+Total 8 (delta 3), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas:   0% (0/3remote: Resolving deltas:  33% (1/3remote: Resolving deltas:  66% (2/3remote: Resolving deltas: 100% (3/3remote: Resolving deltas: 100% (3/3), completed with 2 local objects.
+remote: 
+remote: Create a pull request for 'feature/ci' on GitHub by visiting:
+remote:      https://github.com/rogeriocassares/fullcycle-ci-go/pull/new/feature/ci
+remote: 
+To https://github.com/rogeriocassares/fullcycle-ci-go.git
+ * [new branch]      feature/ci -> feature/ci
+```
+
+
+
+Vamos no github e create PR com essa nova branch!
+
+Agora quando criamos a PR ele vai começar a rodar os testes e nao consegumos nem mesmo fazer o merge sem que passe no test do workflow.
+
+Funcionou!
+
+
+
+Agora deletamos a branch do repositorio remoto, e no nosso terminal:
+
+```bash
+git checkout develop
+git pull origin develop
+git branch -d feature/ci
+```
+
+
+
+Pronto!
+
+
+
+#### Trabalhando com Strategy Matrix
+
+Vale muito apena o processo de realizar os testes em diversos ambientes ou mesmo com diversa versoes do mesmo ambiente/ mesma linguagem. Entao podemos criar uma estratégia e uma matriz de como queremos testar.
+
+```yaml
+name: ci-golang-workflow
+on: 
+  pull_request:
+    branches:
+      - develop
+jobs: 
+  check-application:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: ['1.14','1.15']
+    steps:
+      - uses: actions/checkout@v2 
+      - uses: actions/setup-go@v2
+        with: 
+          go-version: ${{matrix.go}}
+      - run: go test
+      - run: go run math.go
+```
+
+
+
+
+
+E entao vamos criar uma nova branch, 
+
+```bash
+rogerio in 3.CI on  develop [!] 
+❯ git checkout -b feature/github-matrix
+Switched to a new branch 'feature/github-matrix'
+rogerio in 3.CI on  feature/github-matrix [!] 
+❯ git add .
+```
+
+E agora, vamos dar uma PR e ir para as asctions.
+
+Entao os checks estao acontecendo em 2 jobs! Um na versao 1.14 e outro na 1.15
+
+Como ele esta em uma matriz, ele vai testar os mesmos steps em ambientes diferentes!
+
+Aparentemente, neste momento, o processo de PR está travado.
+
+**check-application** *Expected* — *Waiting for status to be reported*
+
+Na realidade, o teste nao foi completado pq nao foi mudado completamente o processo de ci.
+
+Entao pdeomos forçar como amdin ou ajustar o branch para sofrer as modificaçẽos necessárias.
+
+
+
+Ostatus checkin applicationnao existe mais. Pq mudamos o status check no ci.yaml
+
+Por conta disso, vamos desabilitar no branch para resolver isso.
+
+
+
+Sttings, brances, e selecionaras outros status e vamos fazer o merge!
+
+
+
+### CI com Docker
+
+Como subir nossa imagem para teste e CI com Docker!
+
+Vamos criaro nosso Dockerfile!
+
+E essa imagem vai ser utilizada como base para ser utilizada lá no GHA!
+
+```Docker
+FROM golang:latest
+
+WORKDIR /app
+
+COPY . .
+RUN go build -o math
+
+CMD ["./math"]
+```
+
+
+
+Docker build!
+
+```bash
+docker build -t test .
+❯ docker run --rm test
+20
+```
+
+Entao aqui temoso Dockerfile do nosso programa!
+
+Agora vamos commitar esse arquivo e entao depois vamos fazer com que consigamos daro builddessa imagem para subir para o Docker Hub!
+
+deletar o branch no github após o merge
+
+No terminal:
+
+```bash
+git checkout develop
+git pull origin develop
+git branch -d feature/github-matrix
+```
+
+
+
+#### Gerando build da imagem via CI
+
+```bash
+git checkout -b feature/ci-docker
+git add Dockerfile
+```
+
+Conv COmmit ...
+
+Agora que já temos essaimagem colocada, vamos focar na parte do Ci.
+
+Agora, queremos que se o test estiver tudo ok, gerar um build da nossa imagem!
+
+```yaml
+name: ci-golang-workflow
+on: 
+  pull_request:
+    branches:
+      - develop
+      # Todas as vezes que subirmos para o branch develop, queremos que algo aconteça
+jobs: 
+  check-application:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2 
+      - uses: actions/setup-go@v2
+        with: 
+          go-version: 1.15
+      - run: go test
+      - run: go run math.go
+```
+
+
+
+Existe uma action do github que se chama build and push Docker images!
+
+https://github.com/marketplace/actions/build-and-push-docker-images
+
+A action que fala sobre o qemu vai nos ajudar aconfigurar o amiente Docker na nossa máquina!
+
+E a acrion buildx vai nos ajudar a geraro docker build para a nossa imagem!
+
+
+
+https://github.com/docker/setup-buildx-action
+
+Note que o QEMU vai nos ajudar a rodar o Docker em varias arquiteturas.
+
+A primiera coisa eh copiar a parte do qemu e do buildx
+
+O campo name é para colcoar um nome no step que estasendo executado.. Uma descrição do passo que ele esta dando no momento,que é executaro Docker na nossa Actione conseguir gerar o build para nós.
+
+Vamos agora copiar e colar a parte do Build and Push!
+
+Alguns pontosa serem levados em consiferação
+
+Pq existe aqui o id docker?_build?
+
+Pq quando colocamos Id, podemos pegar o resldado dessa action e utilizar como entrada de um outro step!
+
+essa action vai fazer um build e depois vai dar um push no docerhub. Mas nao queremos que ele faça o push agora, apenas o build da imagem.
+
+A tag vai ser o nome do repositorio e o nome da imagem
+
+Nesse caso, temos 3 passos^Fazer o setup do docker para qle conseguir funcionar em diversas aquiteuras, configurar o buil e fazer o build para uma imagem com o nome determinado na tag nessa máquina local temporaria que temosdo github action.
+
+
+
+Vamos subir!
+
+```yaml
+name: ci-golang-workflow
+on:
+  pull_request:
+    branches:
+      - develop
+      # Todas as vezes que subirmos para o branch develop, queremos que algo aconteça
+jobs:
+  check-application:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.15
+      - run: go test
+      - run: go run math.go
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          push: false
+          tags: rogeriocassares/fullcycle-ci-go:latest
+
+```
+
+Entao:
+
+```bash
+git add ci.yaml
+# Conventionalcommits 
+git push origin feature/ci-docker
+
+```
+
+E pronto! O novo branch foi criado dentro do repositorio e apareceu para gerarmos o PR e vai começar a rodar os testes!
+
+Vamos desablitar os checks com diversas opçoes para poder rodaro status check!
+
+
+
+
+
+
+
+
+
+
+
 
 
 
