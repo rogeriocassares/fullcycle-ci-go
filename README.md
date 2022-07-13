@@ -346,21 +346,95 @@ Entao, todas as v ezes que colocarmos no nosso repositorio e dermos um PR, o sta
 
 
 
+Deu erro ao fazer o push diretamente para a branch develop pq devemos fazer uma PR!!!
+
+Vamos fazer um PR criando uma nova branch!
+
+```bash
+rogerio in 3.CI on  develop [!] 
+❯ git checkout -b feature/ci
+Switched to a new branch 'feature/ci'
+rogerio in 3.CI on  feature/ci [!] 
+❯ git push origin feature/ci
+Enumerating objects: 13, done.
+Counting objects: 100% (13/13), done.
+Delta compression using up to 4 threads
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (8/8), 4.38 KiB | 4.38 MiB/s, done.
+Total 8 (delta 3), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas:   0% (0/3remote: Resolving deltas:  33% (1/3remote: Resolving deltas:  66% (2/3remote: Resolving deltas: 100% (3/3remote: Resolving deltas: 100% (3/3), completed with 2 local objects.
+remote: 
+remote: Create a pull request for 'feature/ci' on GitHub by visiting:
+remote:      https://github.com/rogeriocassares/fullcycle-ci-go/pull/new/feature/ci
+remote: 
+To https://github.com/rogeriocassares/fullcycle-ci-go.git
+ * [new branch]      feature/ci -> feature/ci
+```
+
+
+
+Vamos no github e create PR com essa nova branch!
+
+Agora quando criamos a PR ele vai começar a rodar os testes e nao consegumos nem mesmo fazer o merge sem que passe no test do workflow.
+
+Funcionou!
+
+
+
+Agora deletamos a branch do repositorio remoto, e no nosso terminal:
+
+```bash
+git checkout develop
+git pull origin develop
+git branch -d feature/ci
+```
+
+
+
+Pronto!
+
+
+
+#### Trabalhando com Strategy Matrix
+
+Vale muito apena o processo de realizar os testes em diversos ambientes ou mesmo com diversa versoes do mesmo ambiente/ mesma linguagem. Entao podemos criar uma estratégia e uma matriz de como queremos testar.
+
+```yaml
+name: ci-golang-workflow
+on: 
+  pull_request:
+    branches:
+      - develop
+jobs: 
+  check-application:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: ['1.14','1.15']
+    steps:
+      - uses: actions/checkout@v2 
+      - uses: actions/setup-go@v2
+        with: 
+          go-version: ${{matrix.go}}
+      - run: go test
+      - run: go run math.go
+```
 
 
 
 
 
+E entao vamos criar uma nova branch, 
 
+```bash
+rogerio in 3.CI on  develop [!] 
+❯ git checkout -b feature/github-matrix
+Switched to a new branch 'feature/github-matrix'
+rogerio in 3.CI on  feature/github-matrix [!] 
+❯ git add .
+```
 
-
-
-
-
-
-
-
-
+E agora, vamos dar uma PR e ir para as asctions.
 
 
 
